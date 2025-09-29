@@ -1,4 +1,4 @@
-# DSS Production Configuration with Azure Key Vault Integration
+# DSS Production Configuration with Azure Key Vault REST API Integration
 spring:
   profiles:
     active: production
@@ -6,20 +6,25 @@ spring:
 logging:
   level:
     eu.europa.esig.dss: INFO
+    com.azure: WARN
     root: WARN
   pattern:
     console: "%d{yyyy-MM-dd HH:mm:ss} - %msg%n"
 
-# Azure Key Vault PKCS#11 Configuration
+# Azure Key Vault REST API Configuration
 dss:
   server-signing:
-    # Azure Key Vault PKCS#11 provider configuration
-    pkcs11:
-      library: "/opt/azurekv-pkcs11/lib/libazurekv-pkcs11.so"
-      slot-id: 0
-      pin: "${AZURE_CLIENT_SECRET}"
-      # Additional Azure-specific configuration
-      config-file: "/opt/dss/config/azure-pkcs11.cfg"
+    # Azure Key Vault REST API integration
+    azure-key-vault:
+      vault-url: "${AZURE_KEY_VAULT_URI}"
+      client-id: "${AZURE_CLIENT_ID}" 
+      client-secret: "${AZURE_CLIENT_SECRET}"
+      tenant-id: "${AZURE_TENANT_ID}"
+      certificate-name: "boyar-signing-cert"
+      # Connection settings
+      connection-timeout: 30000
+      read-timeout: 60000
+      retry-attempts: 3
   
   # Certificate validation configuration
   certificate-verifier:
@@ -27,27 +32,36 @@ dss:
       proxy:
         http-enabled: false
         https-enabled: false
+      connection-timeout: 10000
+      socket-timeout: 30000
     aia-source:
       cache-data-loader:
         ttl-seconds: 3600
+        max-cache-size: 1000
     crl-source:
       cache-data-loader:
         ttl-seconds: 3600
+        max-cache-size: 1000
     ocsp-source:
       cache-data-loader:
         ttl-seconds: 3600
+        max-cache-size: 1000
 
 # Security configuration
 management:
   endpoints:
     web:
       exposure:
-        include: health,info
+        include: health,info,metrics
       base-path: /actuator
   endpoint:
     health:
       enabled: true
       show-details: when-authorized
+    info:
+      enabled: true
+    metrics:
+      enabled: true
 
 # Production security headers
 server:
@@ -57,3 +71,15 @@ server:
         secure: true
         http-only: true
         same-site: strict
+  tomcat:
+    remoteip:
+      protocol-header: x-forwarded-proto
+      remote-ip-header: x-forwarded-for
+
+# API Key authentication for REST endpoints
+sign:
+  security:
+    api-key:
+      enabled: true
+      header-name: "X-API-Key"
+      key: "${SIGN_API_KEY}"

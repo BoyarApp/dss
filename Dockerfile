@@ -13,19 +13,20 @@ RUN mvn package -pl dss-standalone-app,dss-standalone-app-package,dss-demo-webap
 
 FROM tomcat:11.0.9-jdk21-temurin
 
-# Install dependencies for Azure Key Vault PKCS#11 provider
+# Install Azure CLI and dependencies for Key Vault REST API integration
 RUN apt-get update && apt-get install -y \
     curl \
     wget \
-    unzip \
+    ca-certificates \
+    lsb-release \
+    gnupg \
+    && curl -sL https://packages.microsoft.com/keys/microsoft.asc | \
+       gpg --dearmor | tee /etc/apt/trusted.gpg.d/microsoft.gpg > /dev/null \
+    && echo "deb [arch=amd64] https://packages.microsoft.com/repos/azure-cli/ $(lsb_release -cs) main" | \
+       tee /etc/apt/sources.list.d/azure-cli.list \
+    && apt-get update \
+    && apt-get install -y azure-cli \
     && rm -rf /var/lib/apt/lists/*
-
-# Download and install Azure Key Vault PKCS#11 provider
-RUN mkdir -p /opt/azurekv-pkcs11/lib \
-    && curl -L -o /tmp/azure-kv-pkcs11.tar.gz \
-       "https://github.com/Azure/azure-keyvault-pkcs11/releases/download/v1.0.0/azure-keyvault-pkcs11-1.0.0-linux-x64.tar.gz" \
-    && tar -xzf /tmp/azure-kv-pkcs11.tar.gz -C /opt/azurekv-pkcs11/lib --strip-components=1 \
-    && rm /tmp/azure-kv-pkcs11.tar.gz
 
 # Copy DSS configuration files
 COPY config/ /opt/dss/config/
