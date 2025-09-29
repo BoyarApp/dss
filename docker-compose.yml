@@ -2,7 +2,10 @@ version: "3.9"
 
 services:
   dss:
-    image: ${DSS_IMAGE:-esig/dss:latest}
+    build:
+      context: .
+      args:
+        DSS_VERSION: ${DSS_VERSION:-6.3.0}
     container_name: boyar-dss
     ports:
       - "${SIGN_PORT:-9000}:8080"
