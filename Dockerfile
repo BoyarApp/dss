@@ -1,7 +1,7 @@
 # syntax=docker/dockerfile:1.4
 
 # --- Build stage -----------------------------------------------------------
-ARG DSS_REF=main
+ARG DSS_REF=
 ARG DSS_REPO=https://github.com/esig/dss.git
 
 FROM maven:3.9.7-eclipse-temurin-17 AS build
@@ -11,10 +11,12 @@ ARG DSS_REPO
 
 WORKDIR /src
 
-# Clone the repository and check out the requested reference (branch or tag).
-RUN git clone ${DSS_REPO} . \
- && git fetch --depth 1 origin ${DSS_REF} \
- && git checkout FETCH_HEAD
+# Clone the repository (default branch). Optionally check out a specific ref if provided.
+RUN git clone --depth 1 ${DSS_REPO} . \
+ && if [ -n "${DSS_REF}" ]; then \
+      git fetch --depth 1 origin "${DSS_REF}" && \
+      git checkout FETCH_HEAD; \
+    fi
 
 # Build the executable Spring Boot webapp (skipping tests speeds up CI).
 RUN mvn -pl dss-signature-webapp -am clean package -DskipTests
