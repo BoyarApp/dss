@@ -9,9 +9,20 @@ ARG DSS_VERSION
 
 WORKDIR /tmp/dss
 
-RUN apk add --no-cache curl \
- && curl -fSL "https://github.com/esig/dss/releases/download/dss-${DSS_VERSION}/dss-signature-webapp-${DSS_VERSION}-exec.jar" \
-    -o dss-signature-webapp.jar
+RUN set -euo pipefail \
+ && apk add --no-cache curl unzip \
+ && base_url="https://github.com/esig/dss/releases/download/dss-${DSS_VERSION}" \
+ && if curl -fSL "${base_url}/dss-signature-webapp-${DSS_VERSION}-exec.jar" -o dss-signature-webapp.jar ; then \
+        echo "Downloaded exec jar" ; \
+    else \
+        curl -fSL "${base_url}/dss-signature-webapp-${DSS_VERSION}.zip" -o bundle.zip && \
+        unzip -q bundle.zip && \
+        jar_path=$(find . -name 'dss-signature-webapp*.jar' -print -quit) && \
+        if [ -z "${jar_path}" ]; then \
+            echo "Unable to locate DSS jar in release bundle" >&2 && exit 1; \
+        fi && \
+        mv "${jar_path}" dss-signature-webapp.jar; \
+    fi
 
 # Stage 2: lean runtime image
 FROM eclipse-temurin:17-jre AS runtime

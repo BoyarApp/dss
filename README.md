@@ -1,15 +1,15 @@
 # Boyar Sign – Railway Deployment Bundle
 
-This bundle packages the official [ESIG DSS](https://github.com/esig/dss) signing webapp for Railway by downloading the prebuilt executable Jar from GitHub releases. No source compilation is required.
+This bundle packages the official [ESIG DSS](https://github.com/esig/dss) signing webapp for Railway by downloading the prebuilt release artifacts from GitHub. No source compilation is required.
 
 ## Contents
-- `Dockerfile` – Fetches `dss-signature-webapp-${DSS_VERSION}-exec.jar` from the corresponding GitHub release and runs it on Eclipse Temurin 17.
+- `Dockerfile` – Fetches `dss-signature-webapp` `${DSS_VERSION}` from the corresponding GitHub release (prefers the `*-exec.jar` asset, falls back to the ZIP bundle if necessary) and runs it on Eclipse Temurin 17.
 - `docker-compose.yml` – Local parity stack that uses the same Dockerfile for smoke testing.
 - `.env.example` – Sample environment variables to seed in Railway and local runs.
 - `config/` – Optional overrides (`application.yml`, PKCS#11 configs, logging tweaks) copied into `/opt/dss/config/` at build time.
 
 ## Selecting a Version
-Set `DSS_VERSION` to a tag published by the DSS project (e.g. `6.2.2`). Releases live under https://github.com/esig/dss/releases — each ships `dss-signature-webapp-<version>-exec.jar`, which this Dockerfile downloads.
+Set `DSS_VERSION` to a tag published by the DSS project (e.g. `6.2.2`). Releases live under https://github.com/esig/dss/releases — each ships either `dss-signature-webapp-<version>-exec.jar` or a ZIP bundle containing the jar. The Dockerfile handles both formats automatically.
 
 ## Deploying on Railway
 1. **Create a Railway service** in an EU region (Frankfurt recommended for DSS latency/compliance).
