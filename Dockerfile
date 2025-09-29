@@ -1,18 +1,20 @@
 # syntax=docker/dockerfile:1.4
 
 # --- Build stage -----------------------------------------------------------
-ARG DSS_VERSION=6.3.0
+ARG DSS_REF=main
 ARG DSS_REPO=https://github.com/esig/dss.git
 
 FROM maven:3.9.7-eclipse-temurin-17 AS build
 
-ARG DSS_VERSION
+ARG DSS_REF
 ARG DSS_REPO
 
 WORKDIR /src
 
-# Clone the official DSS repository and checkout the requested tag/branch.
-RUN git clone --depth 1 --branch ${DSS_VERSION} ${DSS_REPO} .
+# Clone the repository and check out the requested reference (branch or tag).
+RUN git clone ${DSS_REPO} . \
+ && git fetch --depth 1 origin ${DSS_REF} \
+ && git checkout FETCH_HEAD
 
 # Build the executable Spring Boot webapp (skipping tests speeds up CI).
 RUN mvn -pl dss-signature-webapp -am clean package -DskipTests
@@ -20,10 +22,10 @@ RUN mvn -pl dss-signature-webapp -am clean package -DskipTests
 # --- Runtime stage ---------------------------------------------------------
 FROM eclipse-temurin:17-jre AS runtime
 
-ARG DSS_VERSION
+ARG DSS_REF
 
 ENV JAVA_OPTS="-Xms512m -Xmx1024m" \
-    DSS_VERSION=${DSS_VERSION}
+    DSS_REF=${DSS_REF}
 
 # Create a non-root user for better security.
 RUN useradd -r -m dss
