@@ -14,8 +14,8 @@ WORKDIR /home/demouser
 RUN git clone https://github.com/esig/dss-demonstrations.git
 WORKDIR /home/demouser/dss-demonstrations
 
-# Build the demo webapp, skipping the problematic standalone dependency copy
-RUN mvn package -pl dss-demo-webapp -DskipTests -Dmaven.dependency.copy.skip=true
+# Build just the WAR file without the standalone components
+RUN mvn clean compile war:war -pl dss-demo-webapp -DskipTests
 
 # Runtime stage
 FROM tomcat:11.0.9-jdk21
