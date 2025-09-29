@@ -1,0 +1,59 @@
+# DSS Production Configuration with Azure Key Vault Integration
+spring:
+  profiles:
+    active: production
+
+logging:
+  level:
+    eu.europa.esig.dss: INFO
+    root: WARN
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss} - %msg%n"
+
+# Azure Key Vault PKCS#11 Configuration
+dss:
+  server-signing:
+    # Azure Key Vault PKCS#11 provider configuration
+    pkcs11:
+      library: "/opt/azurekv-pkcs11/lib/libazurekv-pkcs11.so"
+      slot-id: 0
+      pin: "${AZURE_CLIENT_SECRET}"
+      # Additional Azure-specific configuration
+      config-file: "/opt/dss/config/azure-pkcs11.cfg"
+  
+  # Certificate validation configuration
+  certificate-verifier:
+    commons-data-loader:
+      proxy:
+        http-enabled: false
+        https-enabled: false
+    aia-source:
+      cache-data-loader:
+        ttl-seconds: 3600
+    crl-source:
+      cache-data-loader:
+        ttl-seconds: 3600
+    ocsp-source:
+      cache-data-loader:
+        ttl-seconds: 3600
+
+# Security configuration
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+      base-path: /actuator
+  endpoint:
+    health:
+      enabled: true
+      show-details: when-authorized
+
+# Production security headers
+server:
+  servlet:
+    session:
+      cookie:
+        secure: true
+        http-only: true
+        same-site: strict
