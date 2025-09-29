@@ -6,6 +6,7 @@ services:
       context: .
       args:
         DSS_VERSION: ${DSS_VERSION:-6.2.2}
+        DSS_ASSET_URL: ${DSS_ASSET_URL:-}
     container_name: boyar-dss
     ports:
       - "${SIGN_PORT:-9000}:8080"
