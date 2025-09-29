@@ -14,8 +14,9 @@ WORKDIR /home/demouser
 RUN git clone https://github.com/esig/dss-demonstrations.git
 WORKDIR /home/demouser/dss-demonstrations
 
-# Build just the WAR file without the standalone components
-RUN mvn clean compile war:war -pl dss-demo-webapp -DskipTests
+# Remove the problematic standalone dependency copy from the POM
+RUN sed -i '/<execution>/,/<\/execution>/{ /<id>copy-standalone-complete<\/id>/,/<\/execution>/d; }' dss-demo-webapp/pom.xml \
+    && mvn package -pl dss-demo-webapp -P quick -DskipTests
 
 # Runtime stage
 FROM tomcat:11.0.9-jdk21
