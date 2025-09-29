@@ -1,19 +1,19 @@
 # Boyar Sign – Railway Deployment Bundle
 
-This bundle packages the official [ESIG DSS](https://github.com/esig/dss) signing webapp for Railway using the published binaries from Maven Central. It avoids compiling from source, keeping builds fast and deterministic.
+This bundle packages the official [ESIG DSS](https://github.com/esig/dss) signing webapp for Railway by downloading the prebuilt executable Jar from GitHub releases. No source compilation is required.
 
 ## Contents
-- `Dockerfile` – Downloads `dss-signature-webapp` version `DSS_VERSION` from Maven Central and runs it on Eclipse Temurin 17.
+- `Dockerfile` – Fetches `dss-signature-webapp-${DSS_VERSION}-exec.jar` from the corresponding GitHub release and runs it on Eclipse Temurin 17.
 - `docker-compose.yml` – Local parity stack that uses the same Dockerfile for smoke testing.
 - `.env.example` – Sample environment variables to seed in Railway and local runs.
 - `config/` – Optional overrides (`application.yml`, PKCS#11 configs, logging tweaks) copied into `/opt/dss/config/` at build time.
 
 ## Selecting a Version
-Set the build argument/environment variable `DSS_VERSION` to any release available on Maven Central (e.g. `6.2.2`). Check https://repo1.maven.org/maven2/eu/europa/esig/dss-signature-webapp/ for the latest list.
+Set `DSS_VERSION` to a tag published by the DSS project (e.g. `6.2.2`). Releases live under https://github.com/esig/dss/releases — each ships `dss-signature-webapp-<version>-exec.jar`, which this Dockerfile downloads.
 
 ## Deploying on Railway
 1. **Create a Railway service** in an EU region (Frankfurt recommended for DSS latency/compliance).
-2. **Point Railway at this folder** (monorepo deploy) and set the build argument `DSS_VERSION` if you want something other than the default `6.2.2`.
+2. **Point Railway at this folder** (monorepo deploy). Set the build argument `DSS_VERSION` if you want a version other than the default `6.2.2`.
 3. **Set environment variables** using `.env.example` as a template: `SIGN_API_KEY`, `SIGN_WEBHOOK_SECRET`, `AZURE_KEY_VAULT_URI`, etc.
 4. **Expose port 8080**; Railway auto-assigns an HTTPS endpoint. Drop that URL into Boyar’s `SIGN_BASE_URL`.
 5. **Attach persistent storage** (1–5 GB) if you want logs/temp files to survive restarts.
