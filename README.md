@@ -1,17 +1,15 @@
 # Boyar Sign – Railway Deployment Bundle
 
-This bundle packages the official [ESIG DSS](https://github.com/esig/dss) signing webapp for Railway by automatically discovering and downloading the appropriate release artifact from GitHub. No source compilation is required.
+This bundle builds the official [ESIG DSS](https://github.com/esig/dss-demonstrations) webapp for Railway from the dss-demonstrations repository. It provides a working DSS service with all required functionality.
 
 ## Contents
-- `Dockerfile` – Queries the GitHub releases API for the requested `DSS_VERSION`, selects the first `dss-signature-webapp` jar/zip asset (unless you override with `DSS_ASSET_URL`), and runs it on Eclipse Temurin 17 (unzipping if needed).
+- `Dockerfile` – Multi-stage build that clones the dss-demonstrations repository and builds the dss-demo-webapp using Maven, then deploys it on Tomcat.
 - `docker-compose.yml` – Local parity stack that uses the same Dockerfile for smoke testing.
 - `.env.example` – Sample environment variables to seed in Railway and local runs.
 - `config/` – Optional overrides (`application.yml`, PKCS#11 configs, logging tweaks) copied into `/opt/dss/config/` at build time.
 
-## Selecting a Version
-Set `DSS_VERSION` to any published DSS release tag (default `6.3`, the latest as of now). The Dockerfile calls the GitHub API (`/repos/esig/dss/releases/tags/<tag>`) and automatically picks a suitable asset (`dss-signature-webapp*.jar` or an archive containing it).
-
-If auto-discovery fails, provide a direct link via `DSS_ASSET_URL`—the build will download that file instead (example: `https://github.com/esig/dss/releases/download/dss-6.3/dss-signature-webapp-6.3-exec.jar`).
+## How It Works
+The Dockerfile builds directly from the official dss-demonstrations repository, which contains the actual executable DSS webapp. This ensures compatibility and provides all required DSS functionality.
 
 ## Deploying on Railway
 1. **Create a Railway service** in an EU region (Frankfurt recommended for DSS latency/compliance).

@@ -1,75 +1,40 @@
 # syntax=docker/dockerfile:1.4
 
-ARG DSS_VERSION=6.2.2
-ARG DSS_ASSET_URL=
+# Multi-stage build using the official dss-demonstrations repository
+FROM maven:3.9.11-eclipse-temurin-21 AS build
 
-FROM alpine:3.20 AS downloader
+# Create a user for building
+RUN useradd -ms /bin/bash demouser
+USER demouser
 
-ARG DSS_VERSION
-ARG DSS_ASSET_URL
+# Set working directory
+WORKDIR /home/demouser
 
-WORKDIR /tmp/dss
+# Clone and build DSS demonstrations
+RUN git clone https://github.com/esig/dss-demonstrations.git
+WORKDIR /home/demouser/dss-demonstrations
 
-RUN set -euo pipefail \
- && apk add --no-cache curl jq unzip \
- && if [ -n "${DSS_ASSET_URL}" ]; then \
-      asset_url="${DSS_ASSET_URL}"; \
-      echo "Using explicitly provided asset URL: ${asset_url}"; \
-    else \
-      tag_candidates="dss-${DSS_VERSION} DSS-${DSS_VERSION} v${DSS_VERSION} ${DSS_VERSION}"; \
-      asset_url=""; \
-      for tag in $tag_candidates; do \
-        echo "Querying GitHub release tag: ${tag}"; \
-        response=$(curl -fsSL "https://api.github.com/repos/esig/dss/releases/tags/${tag}" || true); \
-        if [ -n "${response}" ] && echo "${response}" | jq -e '.assets | length > 0' >/dev/null 2>&1; then \
-            candidate=$(echo "${response}" | jq -r '.assets[]?.browser_download_url' | grep -E 'dss-(signature|distribution).*\.(jar|zip)$' | head -n1 || true); \
-            if [ -n "${candidate}" ]; then \
-                asset_url="${candidate}"; \
-                echo "Selected asset: ${asset_url}"; \
-                break; \
-            fi; \
-        fi; \
-      done; \
-      if [ -z "${asset_url}" ]; then \
-        echo "Unable to discover release asset for version ${DSS_VERSION}." >&2; \
-        exit 1; \
-      fi; \
-    fi \
- && curl -fSL "${asset_url}" -o download.bin \
- && case "${asset_url}" in \
-      *.jar) \
-        mv download.bin dss-signature-webapp.jar ;; \
-      *.zip) \
-        unzip -q download.bin \
-        && jar_path=$(find . -name 'dss-signature-webapp*.jar' -print -quit) \
-        && if [ -z "${jar_path}" ]; then \
-             echo "No dss-signature-webapp jar found inside archive" >&2 \
-             && exit 1; \
-           fi \
-        && mv "${jar_path}" dss-signature-webapp.jar ;; \
-      *) \
-        echo "Unsupported asset format: ${asset_url}" >&2 \
-        && exit 1 ;; \
-    esac
+# Build the demo webapp using the quick profile
+RUN mvn package -pl dss-demo-webapp -P quick -DskipTests
 
-FROM eclipse-temurin:17-jre AS runtime
+# Runtime stage
+FROM tomcat:11.0.9-jdk21
 
-ARG DSS_VERSION
+# Remove default webapps
+RUN rm -rf /usr/local/tomcat/webapps/*
 
-ENV JAVA_OPTS="-Xms512m -Xmx1024m" \
-    DSS_VERSION=${DSS_VERSION}
+# Copy the built WAR from build stage
+COPY --from=build /home/demouser/dss-demonstrations/dss-demo-webapp/target/dss-demo-webapp.war /usr/local/tomcat/webapps/ROOT.war
 
-RUN useradd -r -m dss
+# Optional configuration overrides
+COPY config/ /opt/dss/config/
 
-WORKDIR /opt/dss
+# Environment variables
+ENV JAVA_OPTS="-Xms512m -Xmx1024m"
+ENV CATALINA_OPTS="$JAVA_OPTS"
 
-COPY --from=downloader /tmp/dss/dss-signature-webapp.jar ./dss-signature-webapp.jar
-COPY config/ ./config/
-
-RUN chown -R dss:dss /opt/dss
-
-USER dss
-
+# Expose port 8080
 EXPOSE 8080
 
-ENTRYPOINT ["sh", "-c", "java ${JAVA_OPTS} -Dspring.config.additional-location=file:/opt/dss/config/ -jar /opt/dss/dss-signature-webapp.jar"]
+# Start Tomcat
+CMD ["catalina.sh", "run"]
