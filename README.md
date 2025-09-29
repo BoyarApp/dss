@@ -9,9 +9,9 @@ This bundle packages the official [ESIG DSS](https://github.com/esig/dss) signin
 - `config/` – Optional overrides (`application.yml`, PKCS#11 configs, logging tweaks) copied into `/opt/dss/config/` at build time.
 
 ## Selecting a Version
-Set `DSS_VERSION` to any published DSS release tag (e.g. `6.2.2`). The Dockerfile calls the GitHub API (`/repos/esig/dss/releases/tags/<tag>`) and automatically picks a suitable asset (`dss-signature-webapp*.jar` or an archive containing it).
+Set `DSS_VERSION` to any published DSS release tag (default `6.3`, the latest as of now). The Dockerfile calls the GitHub API (`/repos/esig/dss/releases/tags/<tag>`) and automatically picks a suitable asset (`dss-signature-webapp*.jar` or an archive containing it).
 
-If auto-discovery fails, provide a direct link via `DSS_ASSET_URL`—the build will download that file instead.
+If auto-discovery fails, provide a direct link via `DSS_ASSET_URL`—the build will download that file instead (example: `https://github.com/esig/dss/releases/download/dss-6.3/dss-signature-webapp-6.3-exec.jar`).
 
 ## Deploying on Railway
 1. **Create a Railway service** in an EU region (Frankfurt recommended for DSS latency/compliance).
