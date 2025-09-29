@@ -5,7 +5,7 @@ services:
     build:
       context: .
       args:
-        DSS_REF: ${DSS_REF:-}
+        DSS_VERSION: ${DSS_VERSION:-6.2.2}
     container_name: boyar-dss
     ports:
       - "${SIGN_PORT:-9000}:8080"
