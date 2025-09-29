@@ -14,8 +14,8 @@ WORKDIR /home/demouser
 RUN git clone https://github.com/esig/dss-demonstrations.git
 WORKDIR /home/demouser/dss-demonstrations
 
-# Build the demo webapp using the quick profile
-RUN mvn package -pl dss-demo-webapp -P quick -DskipTests
+# Build the demo webapp, skipping the problematic standalone dependency copy
+RUN mvn package -pl dss-demo-webapp -DskipTests -Dmaven.dependency.copy.skip=true
 
 # Runtime stage
 FROM tomcat:11.0.9-jdk21
