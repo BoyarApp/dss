@@ -14,8 +14,8 @@ WORKDIR /home/demouser
 RUN git clone https://github.com/esig/dss-demonstrations.git
 WORKDIR /home/demouser/dss-demonstrations
 
-# Build just the webapp without profiles or extra dependencies
-RUN mvn clean compile war:war -pl dss-demo-webapp -DskipTests -Dmaven.test.skip=true
+# Build using the exact official approach from dss-demonstrations
+RUN mvn package -pl dss-standalone-app,dss-demo-webapp -P quick -DskipTests
 
 # Runtime stage
 FROM tomcat:11.0.9-jdk21
